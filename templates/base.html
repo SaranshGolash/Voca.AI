@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Voca.AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        color: white;
+        min-height: 100vh;
+        font-family: "Inter", sans-serif;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body class="pt-24 pb-12">
+    <!-- Navbar -->
+    <nav
+      class="glass-card fixed w-full top-0 z-50 px-8 py-4 flex justify-between items-center shadow-lg"
+    >
+      <a href="/" class="text-xl font-bold tracking-wider text-indigo-300"
+        >Voca.AI</a
+      >
+      <div class="space-x-6 flex items-center">
+        {% if current_user.is_authenticated %}
+        <a
+          href="{{ url_for('dashboard') }}"
+          class="hover:text-indigo-400 transition"
+          >Dashboard</a
+        >
+        <a
+          href="{{ url_for('subscription') }}"
+          class="px-5 py-2 bg-indigo-600/80 hover:bg-indigo-500 rounded-lg shadow-[0_0_15px_rgba(99,102,241,0.4)] transition border border-indigo-400/50"
+        >
+          💎 Upgrade
+        </a>
+        <a
+          href="{{ url_for('logout') }}"
+          class="text-sm text-gray-400 hover:text-red-400 transition"
+          >Logout</a
+        >
+        {% else %}
+        <a
+          href="{{ url_for('login') }}"
+          class="hover:text-indigo-400 transition"
+          >Login</a
+        >
+        <a
+          href="{{ url_for('signup') }}"
+          class="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition"
+          >Sign Up</a
+        >
+        {% endif %}
+      </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-4">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="p-4 mb-6 rounded-lg glass-card text-center {% if category == 'danger' %}border-red-500/50 text-red-300{% else %}border-indigo-500/50 text-indigo-300{% endif %}"
+      >
+        {{ message }}
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+    </div>
+  </body>
+</html>
