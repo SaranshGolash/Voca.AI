@@ -1,0 +1,183 @@
+{% extends 'base.html' %} {% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+  <!-- Camera Feed -->
+  <div
+    class="glass-card rounded-2xl p-4 flex flex-col items-center justify-center"
+  >
+    <div
+      class="relative w-full aspect-video rounded-xl overflow-hidden bg-black mb-4"
+    >
+      <video
+        id="webcam"
+        autoplay
+        muted
+        playsinline
+        class="w-full h-full object-cover transform -scale-x-100"
+      ></video>
+      <div class="absolute top-4 right-4 flex items-center space-x-2">
+        <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+        <span class="text-xs text-red-500 font-bold tracking-widest uppercase"
+          >REC</span
+        >
+      </div>
+    </div>
+
+    <!-- Push to Talk Interaction -->
+    <button
+      id="micBtn"
+      class="w-full py-4 bg-indigo-600/80 rounded-xl text-lg font-bold shadow-[0_0_15px_rgba(99,102,241,0.5)] transition hover:bg-indigo-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      Initiate Interview
+    </button>
+    <p class="text-xs text-gray-400 mt-3 text-center">
+      Hold the button while speaking your answer. Release to submit.
+    </p>
+  </div>
+
+  <!-- AI Output & Subtitles -->
+  <div class="glass-card rounded-2xl p-8 flex flex-col">
+    <h3
+      class="text-xl font-bold mb-6 text-indigo-300 border-b border-white/10 pb-4"
+    >
+      HR Dialogue
+    </h3>
+    <div id="aiStatus" class="flex-grow text-lg leading-relaxed text-gray-200">
+      System is ready. Ensure your microphone and camera permissions are
+      granted. Click "Initiate Interview" to begin.
+    </div>
+    <div
+      id="transcriptPreview"
+      class="mt-4 p-4 rounded-lg bg-black/30 text-sm text-gray-400 italic hidden border border-white/5"
+    >
+      You: "<span id="liveTranscript"></span>"
+    </div>
+  </div>
+</div>
+
+<script>
+  const webcam = document.getElementById("webcam");
+  const micBtn = document.getElementById("micBtn");
+  const aiStatus = document.getElementById("aiStatus");
+  const transcriptPreview = document.getElementById("transcriptPreview");
+  const liveTranscript = document.getElementById("liveTranscript");
+
+  let conversationHistory = [];
+  let isStarted = false;
+
+  // 1. Initialize Camera Stream
+  navigator.mediaDevices
+    .getUserMedia({ video: true, audio: false })
+    .then((stream) => {
+      webcam.srcObject = stream;
+    })
+    .catch((err) => {
+      alert("Camera access is strictly required for this interview.");
+    });
+
+  // 2. Setup Web Speech API for voice recognition
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = "en-US";
+
+  let finalTranscript = "";
+
+  recognition.onresult = function (event) {
+    let interimTranscript = "";
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+    transcriptPreview.classList.remove("hidden");
+    liveTranscript.textContent = finalTranscript + interimTranscript;
+  };
+
+  // Push-to-Talk Logic
+  const startListening = (e) => {
+    e.preventDefault();
+    if (micBtn.disabled) return;
+
+    if (!isStarted) {
+      // First interaction
+      isStarted = true;
+      sendToAI("Hello, I am ready to begin the interview.");
+      return;
+    }
+
+    finalTranscript = "";
+    liveTranscript.textContent = "";
+    recognition.start();
+    micBtn.textContent = "Listening... (Release to Send)";
+    micBtn.classList.replace("bg-indigo-600/80", "bg-red-600/80");
+  };
+
+  const stopListening = (e) => {
+    e.preventDefault();
+    if (micBtn.disabled || !isStarted) return;
+
+    recognition.stop();
+    micBtn.classList.replace("bg-red-600/80", "bg-indigo-600/80");
+
+    setTimeout(() => {
+      if (finalTranscript.trim() !== "") {
+        conversationHistory.push({
+          role: "candidate",
+          content: finalTranscript,
+        });
+        sendToAI(finalTranscript);
+      } else {
+        micBtn.textContent = "Hold to Speak";
+      }
+    }, 500); // small buffer for final speech chunk
+  };
+
+  micBtn.addEventListener("mousedown", startListening);
+  micBtn.addEventListener("mouseup", stopListening);
+  micBtn.addEventListener("touchstart", startListening);
+  micBtn.addEventListener("touchend", stopListening);
+
+  // 3. API Communication & Text-to-Speech
+  function sendToAI(answer) {
+    micBtn.disabled = true;
+    micBtn.textContent = "HR is evaluating...";
+    aiStatus.innerHTML =
+      '<span class="animate-pulse">Analyzing response...</span>';
+
+    fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answer: answer, history: conversationHistory }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        conversationHistory.push({ role: "hr", content: data.response });
+        aiStatus.textContent = data.response;
+
+        // Speak the HR's response
+        const utterance = new SpeechSynthesisUtterance(data.response);
+        utterance.rate = 1.0;
+
+        utterance.onend = () => {
+          if (data.is_finished) {
+            aiStatus.innerHTML = `<div class="text-emerald-400 font-bold mb-2">Interview Complete. Score: ${data.score}/100</div><div class="text-sm text-gray-300">${data.feedback}</div>`;
+            micBtn.style.display = "none";
+            transcriptPreview.classList.add("hidden");
+            setTimeout(() => {
+              window.location.href = "/dashboard";
+            }, 8000);
+          } else {
+            micBtn.textContent = "Hold to Speak";
+            micBtn.disabled = false;
+            transcriptPreview.classList.add("hidden");
+          }
+        };
+        window.speechSynthesis.speak(utterance);
+      });
+  }
+</script>
+{% endblock %}

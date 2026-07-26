@@ -1,0 +1,40 @@
+{% extends 'base.html' %} {% block content %}
+<div class="glass-card rounded-2xl p-8 shadow-2xl">
+  <div class="flex justify-between items-center mb-8">
+    <h2 class="text-3xl font-bold">Welcome, {{ current_user.username }}</h2>
+    <a
+      href="{{ url_for('interview') }}"
+      class="px-6 py-3 bg-emerald-500/80 hover:bg-emerald-500 rounded-xl font-semibold shadow-[0_0_20px_rgba(16,185,129,0.3)] transition border border-emerald-400/50"
+    >
+      Start New Interview
+    </a>
+  </div>
+
+  <h3 class="text-xl mb-4 text-gray-300">Your Recent Performance (Last 5)</h3>
+
+  {% if interviews %}
+  <div class="space-y-4">
+    {% for record in interviews %}
+    <div
+      class="glass-card rounded-xl p-6 flex justify-between items-start border-l-4 {% if record.score >= 80 %}border-l-emerald-400{% elif record.score >= 60 %}border-l-yellow-400{% else %}border-l-red-400{% endif %}"
+    >
+      <div class="max-w-3xl">
+        <p class="text-sm text-gray-400 mb-2">
+          {{ record.date_taken.strftime('%Y-%m-%d %H:%M') }}
+        </p>
+        <p class="text-gray-200 leading-relaxed">{{ record.feedback }}</p>
+      </div>
+      <div class="text-right ml-6">
+        <span class="text-4xl font-bold">{{ record.score }}</span>
+        <span class="text-gray-400 text-sm block">/ 100</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400 italic">
+    No interview history yet. Start your first session!
+  </p>
+  {% endif %}
+</div>
+{% endblock %}
