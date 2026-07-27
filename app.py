@@ -92,6 +92,9 @@ def logout():
 
 # --- CORE APPLICATION ROUTES ---
 @app.route('/')
+def index():
+    return render_template('index.html')
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
