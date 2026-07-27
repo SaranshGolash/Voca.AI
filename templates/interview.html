@@ -25,9 +25,15 @@
     <!-- Push to Talk Interaction -->
     <button
       id="micBtn"
-      class="w-full py-4 bg-indigo-600/80 rounded-xl text-lg font-bold shadow-[0_0_15px_rgba(99,102,241,0.5)] transition hover:bg-indigo-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="w-full py-4 bg-indigo-600/80 rounded-xl text-lg font-bold shadow-[0_0_15px_rgba(99,102,241,0.5)] transition hover:bg-indigo-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mb-3"
     >
       Initiate Interview
+    </button>
+    <button
+      id="endBtn"
+      class="w-full py-3 bg-white/10 hover:bg-white/20 text-gray-300 border border-white/20 rounded-xl text-base font-semibold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      ⬅ Exit to Dashboard
     </button>
     <p class="text-xs text-gray-400 mt-3 text-center">
       Hold the button while speaking your answer. Release to submit.
@@ -57,6 +63,7 @@
 <script>
   const webcam = document.getElementById("webcam");
   const micBtn = document.getElementById("micBtn");
+  const endBtn = document.getElementById("endBtn");
   const aiStatus = document.getElementById("aiStatus");
   const transcriptPreview = document.getElementById("transcriptPreview");
   const liveTranscript = document.getElementById("liveTranscript");
@@ -97,6 +104,30 @@
     liveTranscript.textContent = finalTranscript + interimTranscript;
   };
 
+  // End / Exit Button Logic
+  endBtn.addEventListener("click", () => {
+    if (!isStarted) {
+      window.location.href = "/dashboard";
+      return;
+    }
+    if (
+      !confirm(
+        "Are you sure you want to end the interview early and get your evaluation scorecard now?",
+      )
+    )
+      return;
+
+    window.speechSynthesis.cancel();
+    try {
+      recognition.stop();
+    } catch (e) {}
+
+    endBtn.disabled = true;
+    sendToAI(
+      "I would like to end the interview right now. Please conclude our session immediately, set is_finished to true, and provide my final score and feedback based on our answers so far.",
+    );
+  });
+
   // Push-to-Talk Logic
   const startListening = (e) => {
     e.preventDefault();
@@ -105,6 +136,9 @@
     if (!isStarted) {
       // First interaction
       isStarted = true;
+      endBtn.textContent = "⏹️ End Interview Early";
+      endBtn.className =
+        "w-full py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 rounded-xl text-base font-semibold shadow-[0_0_15px_rgba(239,68,68,0.2)] transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
       sendToAI("Hello, I am ready to begin the interview.");
       return;
     }
@@ -144,6 +178,7 @@
   // 3. API Communication & Text-to-Speech
   function sendToAI(answer) {
     micBtn.disabled = true;
+    endBtn.disabled = true;
     micBtn.textContent = "HR is evaluating...";
     aiStatus.innerHTML =
       '<span class="animate-pulse">Analyzing response...</span>';
@@ -166,6 +201,7 @@
           if (data.is_finished) {
             aiStatus.innerHTML = `<div class="text-emerald-400 font-bold mb-2">Interview Complete. Score: ${data.score}/100</div><div class="text-sm text-gray-300">${data.feedback}</div>`;
             micBtn.style.display = "none";
+            endBtn.style.display = "none";
             transcriptPreview.classList.add("hidden");
             setTimeout(() => {
               window.location.href = "/dashboard";
@@ -173,6 +209,7 @@
           } else {
             micBtn.textContent = "Hold to Speak";
             micBtn.disabled = false;
+            endBtn.disabled = false;
             transcriptPreview.classList.add("hidden");
           }
         };

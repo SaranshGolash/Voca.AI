@@ -131,7 +131,7 @@ def chat_api():
     system_prompt = """
     You are an expert AI HR Interviewer conducting a behavioral and technical interview for a Software Engineer position.
     Act like a real human HR professional. Ask ONE clear question at a time based on standard tech industry practices.
-    If the user has answered 5 questions in total, you MUST end the interview.
+    If the user has answered 5 questions in total, OR if the user asks to end or stop the interview early, you MUST end the interview immediately. When ending the interview, set is_finished to true and evaluate overall performance out of 100 based on the conversation so far.
     You must respond strictly in JSON format matching this schema:
     {
       "response": "Your spoken response acknowledging their answer, followed by your next question.",
@@ -146,7 +146,7 @@ def chat_api():
     
     prompt = f"{system_prompt}\n\nConversation so far:\n{conversation}\n\nHR Response (in JSON):"
     
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-3-flash-preview')
     try:
         response = model.generate_content(prompt)
         raw_text = response.text.strip().replace('```json', '').replace('```', '')
