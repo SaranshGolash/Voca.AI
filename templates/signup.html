@@ -1,0 +1,58 @@
+{% extends 'base.html' %} {% block content %}
+<div
+  class="max-w-md mx-auto mt-20 glass-card rounded-2xl p-8 shadow-2xl border-emerald-500/20"
+>
+  <div class="text-center mb-8">
+    <h2 class="text-3xl font-bold text-emerald-400">Create Account</h2>
+    <p class="text-gray-400 mt-2 text-sm">
+      Start practicing with our AI HR today.
+    </p>
+  </div>
+
+  <form method="POST" action="{{ url_for('signup') }}" class="space-y-6">
+    <div>
+      <label for="username" class="block text-sm font-medium text-gray-300 mb-2"
+        >Choose a Username</label
+      >
+      <input
+        type="text"
+        id="username"
+        name="username"
+        required
+        class="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+        placeholder="e.g. JohnDoe"
+      />
+    </div>
+
+    <div>
+      <label for="password" class="block text-sm font-medium text-gray-300 mb-2"
+        >Create a Password</label
+      >
+      <input
+        type="password"
+        id="password"
+        name="password"
+        required
+        class="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+        placeholder="••••••••"
+      />
+    </div>
+
+    <button
+      type="submit"
+      class="w-full py-3 bg-emerald-600/80 hover:bg-emerald-500 rounded-xl text-lg font-bold shadow-[0_0_15px_rgba(16,185,129,0.4)] transition active:scale-95"
+    >
+      Sign Up
+    </button>
+  </form>
+
+  <p class="mt-8 text-center text-gray-400 text-sm">
+    Already have an account?
+    <a
+      href="{{ url_for('login') }}"
+      class="text-emerald-400 hover:text-emerald-300 font-semibold transition"
+      >Log in here</a
+    >
+  </p>
+</div>
+{% endblock %}

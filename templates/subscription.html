@@ -1,0 +1,103 @@
+{% extends 'base.html' %} {% block content %}
+<div class="text-center mb-12">
+  <h1 class="text-4xl font-bold mb-4">Unlock Your Career Potential</h1>
+  <p class="text-gray-400 text-lg">
+    Remove limits and practice until you're perfect.
+  </p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+  <!-- Free Tier -->
+  <div class="glass-card rounded-2xl p-8 flex flex-col opacity-75">
+    <h3 class="text-2xl font-bold mb-2">Basic</h3>
+    <p class="text-4xl font-bold mb-6 text-gray-300">Free</p>
+    <ul class="space-y-4 mb-8 flex-grow text-gray-400">
+      <li>✓ 4 Mock Interviews per month</li>
+      <li>✓ Real-time AI evaluation</li>
+      <li>✓ Standard technical questions</li>
+    </ul>
+    <button
+      disabled
+      class="w-full py-3 rounded-lg border border-gray-600 text-gray-500 cursor-not-allowed"
+    >
+      {% if not current_user.is_subscribed %}Current Plan{% else %}Downgrade{%
+      endif %}
+    </button>
+  </div>
+
+  <!-- Pro Tier -->
+  <div
+    class="glass-card rounded-2xl p-8 flex flex-col relative overflow-hidden border-indigo-500/50 shadow-[0_0_30px_rgba(99,102,241,0.2)]"
+  >
+    <div
+      class="absolute top-0 right-0 bg-indigo-500 text-xs font-bold px-3 py-1 rounded-bl-lg"
+    >
+      RECOMMENDED
+    </div>
+    <h3 class="text-2xl font-bold mb-2 text-indigo-300">Pro</h3>
+    <p class="text-4xl font-bold mb-6">
+      ₹499
+      <span class="text-lg text-gray-400 font-normal">/ lifetime access</span>
+    </p>
+    <ul class="space-y-4 mb-8 flex-grow text-gray-200">
+      <li><span class="text-indigo-400">✓</span> Unlimited Mock Interviews</li>
+      <li>
+        <span class="text-indigo-400">✓</span> Historical performance tracking
+      </li>
+      <li>
+        <span class="text-indigo-400">✓</span> Advanced behavioral scenarios
+      </li>
+    </ul>
+    <button
+      id="rzp-button1"
+      data-subscribed="{{ 'true' if current_user.is_subscribed else 'false' }}"
+      class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold shadow-lg transition {% if current_user.is_subscribed %}opacity-50 cursor-not-allowed{% endif %}"
+      {% if current_user.is_subscribed %}disabled{% endif %}
+    >
+      {% if current_user.is_subscribed %}Already Subscribed{% else %}Upgrade
+      Now{% endif %}
+    </button>
+  </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const rzpBtn = document.getElementById('rzp-button1');
+  if (rzpBtn && rzpBtn.dataset.subscribed !== 'true') {
+      rzpBtn.onclick = function(e){
+          e.preventDefault();
+
+          fetch('/create_order', { method: 'POST' })
+          .then(res => res.json())
+          .then(orderData => {
+              var options = {
+                  "key": "{{ key_id }}",
+                  "amount": orderData.amount,
+                  "currency": "INR",
+                  "name": "MockHR Pro",
+                  "description": "Unlimited Interview Access",
+                  "order_id": orderData.id,
+                  "theme": { "color": "#4f46e5" },
+                  "handler": function (response){
+                      fetch('/verify_payment', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(response)
+                      })
+                      .then(res => res.json())
+                      .then(data => {
+                          if(data.success) {
+                              window.location.href = "/dashboard";
+                          } else {
+                              alert("Payment verification failed. Please contact support.");
+                          }
+                      });
+                  }
+              };
+              var rzp = new Razorpay(options);
+              rzp.open();
+          });
+      };
+  }
+</script>
+{% endblock %}

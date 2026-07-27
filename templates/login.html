@@ -1,0 +1,56 @@
+{% extends 'base.html' %} {% block content %}
+<div class="max-w-md mx-auto mt-20 glass-card rounded-2xl p-8 shadow-2xl">
+  <div class="text-center mb-8">
+    <h2 class="text-3xl font-bold text-indigo-300">Welcome Back</h2>
+    <p class="text-gray-400 mt-2 text-sm">
+      Log in to continue your interview prep.
+    </p>
+  </div>
+
+  <form method="POST" action="{{ url_for('login') }}" class="space-y-6">
+    <div>
+      <label for="username" class="block text-sm font-medium text-gray-300 mb-2"
+        >Username</label
+      >
+      <input
+        type="text"
+        id="username"
+        name="username"
+        required
+        class="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+        placeholder="Enter your username"
+      />
+    </div>
+
+    <div>
+      <label for="password" class="block text-sm font-medium text-gray-300 mb-2"
+        >Password</label
+      >
+      <input
+        type="password"
+        id="password"
+        name="password"
+        required
+        class="w-full px-4 py-3 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+        placeholder="••••••••"
+      />
+    </div>
+
+    <button
+      type="submit"
+      class="w-full py-3 bg-indigo-600/80 hover:bg-indigo-500 rounded-xl text-lg font-bold shadow-[0_0_15px_rgba(99,102,241,0.4)] transition active:scale-95"
+    >
+      Log In
+    </button>
+  </form>
+
+  <p class="mt-8 text-center text-gray-400 text-sm">
+    Don't have an account?
+    <a
+      href="{{ url_for('signup') }}"
+      class="text-indigo-400 hover:text-indigo-300 font-semibold transition"
+      >Sign up here</a
+    >
+  </p>
+</div>
+{% endblock %}
