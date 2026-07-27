@@ -98,9 +98,9 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Fetch only the last 5 interviews for the history limit
-    recent_interviews = Interview.query.filter_by(user_id=current_user.id).order_by(Interview.date_taken.desc()).limit(5).all()
-    return render_template('dashboard.html', interviews=recent_interviews)
+    # Fetch all interviews for the user ordered by date descending
+    all_interviews = Interview.query.filter_by(user_id=current_user.id).order_by(Interview.date_taken.desc()).all()
+    return render_template('dashboard.html', interviews=all_interviews)
 
 @app.route('/interview')
 @login_required
@@ -142,7 +142,8 @@ def chat_api():
     """
     
     conversation = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
-    conversation += f"\nCandidate: {user_answer}"
+    if not history or history[-1].get('role') != 'candidate':
+        conversation += f"\nCandidate: {user_answer}"
     
     prompt = f"{system_prompt}\n\nConversation so far:\n{conversation}\n\nHR Response (in JSON):"
     
@@ -153,11 +154,24 @@ def chat_api():
         ai_data = json.loads(raw_text)
         
         # If the AI dictates the interview is over, save the score and feedback to the database
-        if ai_data.get('is_finished') and ai_data.get('score'):
+        if ai_data.get('is_finished'):
+            score_val = ai_data.get('score', 0)
+            try:
+                if isinstance(score_val, str):
+                    score_val = int(score_val.split('/')[0].strip())
+                else:
+                    score_val = int(score_val or 0)
+            except (ValueError, TypeError):
+                score_val = 0
+                
+            feedback_val = ai_data.get('feedback')
+            if not feedback_val or not isinstance(feedback_val, str):
+                feedback_val = "Interview concluded. Practice more questions to receive comprehensive AI feedback."
+                
             new_interview = Interview(
                 user_id=current_user.id,
-                score=ai_data['score'],
-                feedback=ai_data['feedback']
+                score=score_val,
+                feedback=feedback_val
             )
             db.session.add(new_interview)
             db.session.commit()
